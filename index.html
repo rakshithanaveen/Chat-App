@@ -27,11 +27,6 @@
 </head>
 <body class="bg-gray-100 font-sans h-screen flex flex-col antialiased">
 
-  <!-- DYNAMIC LIVE STATUS LOGGER -->
-  <div class="bg-black text-lime-400 p-2 font-mono text-xs z-50 border-b border-gray-800 max-h-24 overflow-y-auto">
-    <strong>System Log:</strong> <span id="live-system-log">Initializing system interface...</span>
-  </div>
-
   <!-- MAIN WRAPPER CONTAINER -->
   <div class="flex-1 flex items-center justify-center relative p-0 sm:p-4 md:p-6 overflow-hidden">
     
@@ -51,7 +46,7 @@
         <button id="btn-login-a" class="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg shadow-sm hover:border-whatsapp-teal bg-gray-50 hover:bg-emerald-50/30 transition group">
           <div class="text-left">
             <div class="font-semibold text-gray-700 group-hover:text-whatsapp-teal">User A (NAV)</div>
-            <div class="text-xs text-gray-400">NAV@test.com</div>
+            <div class="text-xs text-gray-400">nav@test.com</div>
           </div>
           <span class="text-xs bg-whatsapp-teal text-white px-2.5 py-1 rounded-full font-medium">Log In</span>
         </button>
@@ -59,7 +54,7 @@
         <button id="btn-login-b" class="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg shadow-sm hover:border-whatsapp-teal bg-gray-50 hover:bg-emerald-50/30 transition group">
           <div class="text-left">
             <div class="font-semibold text-gray-700 group-hover:text-whatsapp-teal">User B (RNJ)</div>
-            <div class="text-xs text-gray-400">RNJ@test.com</div>
+            <div class="text-xs text-gray-400">rnj@test.com</div>
           </div>
           <span class="text-xs bg-whatsapp-teal text-white px-2.5 py-1 rounded-full font-medium">Log In</span>
         </button>
@@ -71,6 +66,7 @@
       
       <!-- SIDEBAR -->
       <div class="w-1/3 border-r border-gray-200 flex flex-col bg-white">
+        <!-- Sidebar Header / Current User Status -->
         <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200">
           <div class="flex items-center space-x-3">
             <div id="current-user-avatar" class="w-10 h-10 bg-whatsapp-teal rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm"></div>
@@ -88,6 +84,7 @@
           </button>
         </div>
 
+        <!-- Room Target/Contact Panel -->
         <div class="flex-1 overflow-y-auto">
           <div class="p-3 bg-emerald-50/50 border-b border-gray-100 flex items-center space-x-3 cursor-default">
             <div id="partner-avatar" class="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase text-lg shadow-sm"></div>
@@ -104,6 +101,7 @@
 
       <!-- CHAT MAIN CONTENT HUB -->
       <div class="flex-1 flex flex-col bg-whatsapp-bg relative">
+        <!-- Top Navigation Bar -->
         <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10">
           <div class="flex items-center space-x-3">
             <div id="chat-header-avatar" class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm"></div>
@@ -114,8 +112,12 @@
           </div>
         </div>
 
-        <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col"></div>
+        <!-- Chat History Window -->
+        <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col">
+          <!-- Dynamic nodes inject here -->
+        </div>
 
+        <!-- Chat Input Action Deck -->
         <div class="p-3 bg-whatsapp-gray flex items-center space-x-3 border-t border-gray-200">
           <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-white px-4 py-2.5 text-sm rounded-lg outline-none focus:ring-1 focus:ring-whatsapp-teal border border-gray-200" autocomplete="off" disabled>
           <button id="btn-send" class="bg-whatsapp-teal text-white p-2.5 rounded-full hover:bg-whatsapp-light transition shadow disabled:opacity-50" disabled>
@@ -124,9 +126,10 @@
             </svg>
           </button>
         </div>
-      </div>
 
+      </div>
     </div>
+
   </div>
 
   <!-- FIREBASE INTEGRATION ENGINE SCRIPT MODULE -->
@@ -134,16 +137,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const logEl = document.getElementById('live-system-log');
-    function log(msg, isError = false) {
-      console.log(msg);
-      logEl.innerHTML = isError ? `<span class="text-red-500 font-bold">⚠️ ${msg}</span>` : `✔️ ${msg}`;
-    }
-
-    window.onerror = function(message, source, lineno, colno, error) {
-      log(`Fatal Global Error: ${message} at line ${lineno}`, true);
-    };
 
     const firebaseConfig = {
       apiKey: "AIzaSyBKdjX2DAcgT_yklBZdTe9D6hIbQAiE-vc",
@@ -154,12 +147,18 @@
       appId: "1:907954904111:web:f4245d78b8d46b898fbada"
     };
 
-    let app, auth, db, currentUser = null, targetPartner = null, activeChatId = null;
-    let typingTimeout = null, unsubscribeMessages = null, unsubscribeChatDoc = null;
+    let app, auth, db;
+    let currentUser = null;
+    let targetPartner = null;
+    let activeChatId = null;
+    let typingTimeout = null;
+    let unsubscribeMessages = null;
+    let unsubscribeChatDoc = null;
 
+    // Fixed key structures to absolute lower-case to secure strict mapping continuity
     const USER_PROFILES = {
-      "NAV@test.com": { email: "NAV@test.com", displayId: "NAV", name: "User A (NAV)" },
-      "RNJ@test.com": { email: "RNJ@test.com", displayId: "RNJ", name: "User B (RNJ)" }
+      "nav@test.com": { email: "nav@test.com", displayId: "NAV", name: "User A (NAV)" },
+      "rnj@test.com": { email: "rnj@test.com", displayId: "RNJ", name: "User B (RNJ)" }
     };
 
     const authScreen = document.getElementById('auth-screen');
@@ -181,43 +180,36 @@
     const btnLogout = document.getElementById('btn-logout');
 
     try {
-      log("Connecting to Firebase...");
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
-      log("Firebase core modules successfully initialized.");
       setupAuthObserver();
     } catch(error) {
-      log("Initialization Fault: " + error.message, true);
+      console.error("Firebase startup fault: ", error);
     }
 
     function setupAuthObserver() {
       onAuthStateChanged(auth, async (user) => {
         try {
           if (user) {
-            log(`Authenticated successfully as ${user.email}`);
             currentUser = user;
-            currentUser.metaProfile = USER_PROFILES[user.email.toUpperCase()] || { name: user.email, displayId: "??" };
+            const userEmailLower = user.email.toLowerCase();
+            currentUser.metaProfile = USER_PROFILES[userEmailLower] || { name: user.email, displayId: "??" };
             
-            determinePartnerIdentity(user.email);
+            determinePartnerIdentity(userEmailLower);
             generatePredictiveChatId();
             
             authScreen.classList.add('hidden');
             chatScreen.classList.remove('hidden');
             
             updateUserProfileUI();
-            log("Verifying Firestore Room document structures...");
             await ensureChatDocumentStructure();
-            
-            log("Opening real-time messaging pipeline streams...");
             listenToChatMetaRoom();
             listenToLiveMessages();
             
             chatInput.disabled = false;
             btnSend.disabled = false;
-            log("System fully operational. Ready to chat.");
           } else {
-            log("System Idle. Waiting for User authentication selection click.");
             teardownActiveListeners();
             currentUser = null;
             authScreen.classList.remove('hidden');
@@ -226,14 +218,13 @@
             btnSend.disabled = true;
           }
         } catch (obsError) {
-          log("Interface Load Error: " + obsError.message, true);
+          alert("Post-Login Setup Fault: " + obsError.message + "\n\nMake sure your Firestore Database is created in Test Mode.");
         }
       });
     }
 
     function determinePartnerIdentity(currentEmail) {
-      const canonical = currentEmail.toUpperCase();
-      targetPartner = (canonical === "NAV@TEST.COM") ? USER_PROFILES["RNJ@TEST.COM"] : USER_PROFILES["NAV@TEST.COM"];
+      targetPartner = (currentEmail === "nav@test.com") ? USER_PROFILES["rnj@test.com"] : USER_PROFILES["nav@test.com"];
     }
 
     function generatePredictiveChatId() {
@@ -265,7 +256,7 @@
           }, { merge: true });
         }
       } catch (e) {
-        log("Firestore write blocked. Did you turn on Firestore in Test Mode? Error details: " + e.message, true);
+        throw new Error("Firestore access blocked. Check if Firestore Database is created in Test Mode. " + e.message);
       }
     }
 
@@ -290,7 +281,7 @@
             sidebarStatus.classList.remove('hidden');
           }
         }
-      }, (err) => { log("Meta Sync Interrupted: " + err.message, true); });
+      });
     }
 
     function listenToLiveMessages() {
@@ -315,8 +306,6 @@
           updateDoc(docRef, { status: 'read' }).catch(err => console.error(err));
         });
         messageContainer.scrollTop = messageContainer.scrollHeight;
-      }, (error) => {
-        log("Message Stream Error (Check Firestore indexes/rules): " + error.message, true);
       });
     }
 
@@ -383,7 +372,7 @@
           status: 'sent'
         });
       } catch (err) {
-        log("Message send failed: " + err.message, true);
+        console.error(err);
       }
     }
 
@@ -410,19 +399,11 @@
     }
 
     btnLoginA.addEventListener('click', () => {
-      log("Login Button A clicked. Sending request to Firebase...");
-      signInWithEmailAndPassword(auth, "NAV@test.com", "123456").catch(err => {
-        log("Authentication error: " + err.message, true);
-        alert("Authentication failed: " + err.message);
-      });
+      signInWithEmailAndPassword(auth, "nav@test.com", "123456").catch(err => alert("Authentication failed: " + err.message));
     });
 
     btnLoginB.addEventListener('click', () => {
-      log("Login Button B clicked. Sending request to Firebase...");
-      signInWithEmailAndPassword(auth, "RNJ@test.com", "123456").catch(err => {
-        log("Authentication error: " + err.message, true);
-        alert("Authentication failed: " + err.message);
-      });
+      signInWithEmailAndPassword(auth, "rnj@test.com", "123456").catch(err => alert("Authentication failed: " + err.message));
     });
 
     btnLogout.addEventListener('click', () => { if(auth) signOut(auth); });
