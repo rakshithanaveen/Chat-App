@@ -28,22 +28,6 @@
 </head>
 <body class="bg-gray-100 font-sans h-screen flex flex-col antialiased">
 
-  <!-- FIREBASE CONFIG CONTAINER PANEL (FOR DEMO CONVENIENCE) -->
-  <div id="config-panel" class="bg-white p-4 shadow-md border-b border-gray-200 z-50">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-      <div>
-        <h2 class="text-sm font-bold text-gray-700">Firebase Configuration Setup</h2>
-        <p class="text-xs text-gray-500">Provide your web app config credentials below to activate real-time syncing.</p>
-      </div>
-      <div class="flex-1 w-full">
-        <textarea id="firebase-config-input" rows="2" class="w-full font-mono text-xs p-2 border border-gray-300 rounded focus:ring-1 focus:ring-whatsapp-teal outline-none" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}'></textarea>
-      </div>
-      <button id="btn-save-config" class="bg-whatsapp-teal text-white px-4 py-2 text-sm rounded font-medium hover:bg-whatsapp-light transition">
-        Connect App
-      </button>
-    </div>
-  </div>
-
   <!-- MAIN WRAPPER CONTAINER -->
   <div class="flex-1 flex items-center justify-center relative p-0 sm:p-4 md:p-6 overflow-hidden">
     
@@ -77,8 +61,8 @@
         </button>
       </div>
 
-      <div id="auth-status-msg" class="text-xs font-medium text-amber-600 hidden">
-        Please configure your Firebase credentials at the top first!
+      <div id="auth-status-msg" class="text-xs font-medium text-red-600 hidden">
+        Connection error. Please verify database parameters.
       </div>
     </div>
 
@@ -159,6 +143,17 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Embedded Core Project Configuration Instance Credentials
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKdjX2DAcgT_yklBZdTe9D6hIbQAiE-vc",
+      authDomain: "chatapp-81c13.firebaseapp.com",
+      projectId: "chatapp-81c13",
+      storageBucket: "chatapp-81c13.firebasestorage.app",
+      messagingSenderId: "907954904111",
+      appId: "1:907954904111:web:f4245d78b8d46b898fbada",
+      measurementId: "G-0PKWCDSJHK"
+    };
+
     // Application Global Variables
     let app, auth, db;
     let currentUser = null;
@@ -175,9 +170,6 @@
     };
 
     // DOM UI Target Elements
-    const configPanel = document.getElementById('config-panel');
-    const firebaseConfigInput = document.getElementById('firebase-config-input');
-    const btnSaveConfig = document.getElementById('btn-save-config');
     const authScreen = document.getElementById('auth-screen');
     const chatScreen = document.getElementById('chat-screen');
     const btnLoginA = document.getElementById('btn-login-a');
@@ -197,36 +189,17 @@
     const btnSend = document.getElementById('btn-send');
     const btnLogout = document.getElementById('btn-logout');
 
-    // Retrieve previous local configurations if active
-    const savedConfig = localStorage.getItem('__chat_firebase_config');
-    if (savedConfig) {
-      firebaseConfigInput.value = savedConfig;
-      initializeFirebaseEngine(JSON.parse(savedConfig));
-    }
-
-    btnSaveConfig.addEventListener('click', () => {
-      const rawText = firebaseConfigInput.value.trim();
-      if(!rawText) return alert("Please supply valid JSON properties.");
-      try {
-        const parsed = JSON.parse(rawText);
-        localStorage.setItem('__chat_firebase_config', JSON.stringify(parsed));
-        alert("Configuration connected successfully!");
-        window.location.reload();
-      } catch(e) {
-        alert("Malformed JSON. Please ensure key parameters conform to specifications.");
-      }
-    });
+    // Automatically fire up the network service engine
+    initializeFirebaseEngine(firebaseConfig);
 
     function initializeFirebaseEngine(config) {
       try {
         app = initializeApp(config);
         auth = getAuth(app);
         db = getFirestore(app);
-        authStatusMsg.classList.add('hidden');
         setupAuthObserver();
       } catch(error) {
         console.error("Initialization fault:", error);
-        authStatusMsg.textContent = "Error initializing connection config. Check parameters.";
         authStatusMsg.classList.remove('hidden');
       }
     }
@@ -273,8 +246,8 @@
       }
     }
 
+    // Alphabetic uid string sequence normalization
     function generatePredictiveChatId() {
-      // Deterministic sorted UID generation based on standard alphabetical logic mapping
       const normalizedCurrent = currentUser.email.toLowerCase();
       const normalizedPartner = targetPartner.email.toLowerCase();
       const tokens = [normalizedCurrent, normalizedPartner].sort();
@@ -334,11 +307,10 @@
     function listenToLiveMessages() {
       if (!db || !activeChatId) return;
       
-      // Target active chat room messages
       const msgsCollectionRef = collection(db, "chats", activeChatId, "messages");
-      
-      // Client-side auto delete validation mechanism filter boundary limit calculations
       const now = new Date();
+      
+      // Dynamic boundary filter tracking timeline rules
       const q = query(
         msgsCollectionRef, 
         where("expireAt", ">", now),
@@ -353,7 +325,6 @@
           const data = msgDoc.data();
           const isMe = data.senderId === currentUser.email.toLowerCase();
           
-          // Batch non-read incoming instances targeting current active entity container execution loops
           if(!isMe && data.status !== 'read') {
             unreadMessageDocRefs.push(doc(db, "chats", activeChatId, "messages", msgDoc.id));
           }
@@ -361,15 +332,14 @@
           renderMessageBubble(data, isMe);
         });
 
-        // Trigger asynchronous atomic batch status updates to 'read' state criteria matching
+        // Resolve status maps
         unreadMessageDocRefs.forEach((docRef) => {
-          updateDoc(docRef, { status: 'read' }).catch(err => console.error("Receipt execution failure:", err));
+          updateDoc(docRef, { status: 'read' }).catch(err => console.error("Receipt update error:", err));
         });
 
-        // Push layout scroll index to bottom focus line area viewport
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }, (error) => {
-        console.error("Query Execution Exception State Exception Info:", error);
+        console.error("Database connection exception stream trace:", error);
       });
     }
 
@@ -382,19 +352,17 @@
         isMe ? 'bg-whatsapp-out text-gray-900 rounded-tr-none' : 'bg-whatsapp-in text-gray-900 rounded-tl-none'
       }`;
 
-      // Message Content Body Text node creation mappings safely escaping injected values
       const textNode = document.createElement('p');
       textNode.className = "break-words leading-relaxed tracking-wide pr-8";
       textNode.textContent = data.text;
       bubble.appendChild(textNode);
 
-      // Meta panel timestamp row metrics mapping nodes
       const metaPanel = document.createElement('div');
       metaPanel.className = "absolute bottom-1 right-1.5 flex items-center space-x-0.5 text-[10px] text-gray-400 select-none";
       
       let displayTime = "";
       if (data.createdAt) {
-        const d = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+        const d = new Date(data.createdAt);
         displayTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } else {
         displayTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -404,19 +372,16 @@
       timeSpan.textContent = displayTime;
       metaPanel.appendChild(timeSpan);
 
-      // If sent by current entity interface tracking instances, append corresponding dynamic checkmark asset indicators
       if(isMe) {
         const checkmarks = document.createElement('span');
         checkmarks.className = "ml-0.5";
         if(data.status === 'read') {
-          // Blue checkmarks
           checkmarks.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M6.267 3.455a.75.75 0 00-.708.522L3.547 11.22a.75.75 0 101.446.4l1.372-4.954 8.214 8.214a.75.75 0 001.06-1.06L6.267 3.455z" clip-rule="evenodd"/>
               <path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/>
             </svg>`;
         } else {
-          // Gray single checkmark indicating safe ingestion state complete metrics
           checkmarks.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/>
@@ -438,15 +403,13 @@
       clearTypingIndicatorState();
 
       const messagesCollectionRef = collection(db, "chats", activeChatId, "messages");
-      
       const currentTime = new Date();
-      // Enforce the 24-hour retention timeline parameters
       const retentionExpirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
 
       const documentPayload = {
         text: messageBody,
         senderId: currentUser.email.toLowerCase(),
-        createdAt: currentTime.toISOString(), // Standardized JS Iso timestamp format tracking parameters
+        createdAt: currentTime.toISOString(),
         expireAt: retentionExpirationTime,
         status: 'sent'
       };
@@ -454,7 +417,7 @@
       try {
         await addDoc(messagesCollectionRef, documentPayload);
       } catch (err) {
-        console.error("Database Write Error Exception Core Profile Dump Log:", err);
+        console.error("Database compilation fault logging error:", err);
       }
     }
 
@@ -465,7 +428,7 @@
       
       updateDoc(chatDocRef, {
         [`typing.${myToken}`]: isTyping
-      }).catch(e => console.error("Typing engine error trace connection mapping log:", e));
+      }).catch(e => console.error("Typing context mismatch:", e));
     }
 
     function handleTypingInputTrigger() {
@@ -486,15 +449,13 @@
       if(unsubscribeChatDoc) unsubscribeChatDoc();
     }
 
-    // Action execution bindings routing
+    // Click Bindings
     btnLoginA.addEventListener('click', () => {
-      if(!auth) return authStatusMsg.classList.remove('hidden');
-      signInWithEmailAndPassword(auth, "NAV@test.com", "1234").catch(err => alert("Auth Fault: " + err.message));
+      signInWithEmailAndPassword(auth, "NAV@test.com", "1234").catch(err => alert("Authentication failed: " + err.message));
     });
 
     btnLoginB.addEventListener('click', () => {
-      if(!auth) return authStatusMsg.classList.remove('hidden');
-      signInWithEmailAndPassword(auth, "RNJ@test.com", "1234").catch(err => alert("Auth Fault: " + err.message));
+      signInWithEmailAndPassword(auth, "RNJ@test.com", "1234").catch(err => alert("Authentication failed: " + err.message));
     });
 
     btnLogout.addEventListener('click', () => {
