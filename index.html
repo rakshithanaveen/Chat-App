@@ -26,13 +26,13 @@
     }
   </script>
 </head>
-<body class="bg-gray-100 font-sans h-screen flex flex-col antialiased">
+<body class="bg-gray-100 font-sans h-screen flex flex-col antialiased select-none">
 
   <!-- MAIN WRAPPER CONTAINER -->
-  <div class="flex-1 flex items-center justify-center relative p-0 sm:p-4 md:p-6 overflow-hidden">
+  <div class="flex-1 flex items-center justify-center relative p-0 sm:p-4 md:p-6 overflow-hidden h-full">
     
     <!-- AUTH SCREEN (HANDLES BOTH LOGIN AND REGISTRATION) -->
-    <div id="auth-screen" class="bg-white p-8 rounded-xl shadow-xl max-w-md w-full border border-gray-200">
+    <div id="auth-screen" class="bg-white p-8 rounded-xl shadow-xl max-w-md w-full border border-gray-200 mx-4">
       <div class="flex flex-col items-center text-center space-y-2 mb-6">
         <div class="w-14 h-14 bg-whatsapp-teal rounded-full flex items-center justify-center text-white shadow">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +43,6 @@
         <p id="auth-subtitle" class="text-xs text-gray-500">Register once to access the encrypted chat system hub.</p>
       </div>
 
-      <!-- INTERCHANGEABLE FORM CHANNELS -->
       <div class="space-y-4">
         <div>
           <label for="auth-username" class="block text-xs font-semibold text-gray-600 uppercase mb-1 tracking-wide">Username</label>
@@ -52,14 +51,13 @@
 
         <div>
           <label for="auth-password" class="block text-xs font-semibold text-gray-600 uppercase mb-1 tracking-wide">Password</label>
-          <input type="password" id="auth-password" placeholder="••••••" class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 outline-none focus:ring-1 focus:ring-whatsapp-teal transition tracking-widest">
+          <input type="password" id="auth-password" placeholder="•••••" class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-300 outline-none focus:ring-1 focus:ring-whatsapp-teal transition tracking-widest">
         </div>
 
         <button id="btn-primary-auth" class="w-full bg-whatsapp-teal text-white py-3 rounded-lg font-semibold text-sm hover:bg-whatsapp-light shadow transition tracking-wide">
           Register Account
         </button>
 
-        <!-- ALTERNATIVE ROUTE TOGGLE LINK -->
         <p class="text-center text-xs text-gray-500 pt-2">
           <span id="auth-toggle-text">Already have an account?</span>
           <button id="btn-toggle-auth-mode" class="text-whatsapp-teal font-semibold hover:underline focus:outline-none ml-1">Log In here</button>
@@ -69,19 +67,19 @@
       </div>
     </div>
 
-    <!-- MAIN CHAT APPLICATION SCREEN -->
-    <div id="chat-screen" class="hidden bg-white w-full h-full max-w-6xl rounded-none sm:rounded-xl shadow-2xl flex border border-gray-200 overflow-hidden">
+    <!-- MAIN CHAT APPLICATION SCREEN (MOBILE ADAPTIVE SINGLE-PANEL SLIDING MATRIX) -->
+    <div id="chat-screen" class="hidden bg-white w-full h-full max-w-6xl rounded-none sm:rounded-xl shadow-2xl flex border border-gray-200 overflow-hidden relative">
       
-      <!-- SIDEBAR DIRECTORY -->
-      <div class="w-1/3 border-r border-gray-200 flex flex-col bg-white">
-        <!-- Sidebar Profile Header -->
+      <!-- SIDEBAR DIRECTORY PANEL (w-full on mobile, w-1/3 on desktop) -->
+      <div id="sidebar-panel" class="w-full md:w-1/3 border-r border-gray-200 flex flex-col bg-white h-full shrink-0 transition-all duration-300">
+        <!-- Profile Header -->
         <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200">
           <div class="flex items-center space-x-3">
             <div id="current-user-avatar" class="w-10 h-10 bg-whatsapp-teal rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm text-sm">ME</div>
-            <div>
+            <div class="min-w-0">
               <div id="current-user-name" class="font-semibold text-gray-800 text-sm truncate max-w-[120px]">Loading...</div>
               <div class="text-[10px] text-emerald-600 font-medium flex items-center">
-                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block mr-1 animate-pulse"></span> Active Online
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block mr-1 animate-pulse"></span> Active
               </div>
             </div>
           </div>
@@ -92,58 +90,80 @@
           </button>
         </div>
 
-        <!-- Scrollable Active Dynamic User Directory Container -->
         <div class="p-2 bg-gray-50 text-xs font-semibold text-gray-400 border-b border-gray-100 uppercase tracking-wider">Available Users</div>
         <div id="users-directory-list" class="flex-1 overflow-y-auto divide-y divide-gray-100">
-          <!-- Registered users render here dynamically -->
+          <!-- Profiles map dynamically here -->
         </div>
       </div>
 
-      <!-- CHAT CONVERSATION SPACE HUB -->
-      <div id="chat-window-placeholder" class="flex-1 flex flex-col items-center justify-center bg-whatsapp-bg p-6 text-center select-none">
-        <div class="w-20 h-20 bg-gray-200/60 rounded-full flex items-center justify-center text-gray-400 mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+      <!-- CHAT CONVERSATION VIEW WINDOW HUB -->
+      <div id="chat-panel" class="hidden md:flex flex-col flex-1 bg-whatsapp-bg h-full w-full relative z-20">
+        
+        <!-- INITIAL EMPTY ROOM VIEW VIEWPORT PLACEHOLDER -->
+        <div id="chat-window-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-whatsapp-bg p-6 text-center select-none z-30">
+          <div class="w-20 h-20 bg-gray-200/60 rounded-full flex items-center justify-center text-gray-400 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h2 class="text-gray-700 font-semibold text-base">WhatsApp Secure Link</h2>
+          <p class="text-xs text-gray-400 max-w-xs mt-1">Select a user profile from the directory panel list to activate an auto-expiring 1-on-1 chat room.</p>
         </div>
-        <h2 class="text-gray-700 font-semibold text-base">WhatsApp Secure Link</h2>
-        <p class="text-xs text-gray-400 max-w-xs mt-1">Select a user profile from the directory panel list on the left to activate an auto-expiring 1-on-1 chat room.</p>
-      </div>
 
-      <div id="chat-window-active" class="hidden flex-1 flex flex-col bg-whatsapp-bg relative">
-        <!-- Room Navigation Bar Header -->
-        <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10">
-          <div class="flex items-center space-x-3">
-            <div id="chat-header-avatar" class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm text-sm">??</div>
-            <div>
-              <div id="chat-header-title" class="font-semibold text-gray-800 text-sm">Selected Room</div>
-              <div id="chat-header-subtitle" class="text-xs text-gray-500">Secure Room Feed</div>
+        <!-- ACTIVE CHAT CONTENT WINDOW PANEL LAYER -->
+        <div id="chat-window-content" class="flex flex-col h-full w-full">
+          <!-- Room Action Bar Navigation Header Header -->
+          <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10 shrink-0">
+            <div class="flex items-center space-x-3 min-w-0">
+              <!-- Mobile Back Button Arrow Asset Trigger -->
+              <button id="btn-mobile-back" class="md:hidden text-whatsapp-teal hover:bg-gray-200 p-1 rounded-full transition focus:outline-none mr-1" title="Back to list">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
+              <div id="chat-header-avatar" class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm text-sm shrink-0">??</div>
+              <div class="min-w-0">
+                <div id="chat-header-title" class="font-semibold text-gray-800 text-sm truncate">Selected Room</div>
+                <div id="chat-header-subtitle" class="text-xs text-gray-500 truncate">Secure Room Feed</div>
+              </div>
             </div>
+          </div>
+
+          <!-- Chat History Message Stream Box Container -->
+          <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col bg-whatsapp-bg"></div>
+
+          <!-- Hidden Input Node Capture for Photos -->
+          <input type="file" id="photo-input" accept="image/*" class="hidden">
+
+          <!-- Messaging Form Action Input Deck Footer -->
+          <div class="p-3 bg-whatsapp-gray flex items-center space-x-2.5 border-t border-gray-200 shrink-0">
+            <!-- Photo Upload Trigger Button Asset -->
+            <button id="btn-trigger-photo" class="text-gray-500 hover:text-whatsapp-teal p-2 rounded-full hover:bg-gray-200 transition focus:outline-none" title="Share Photo">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+            
+            <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-white px-4 py-2.5 text-sm rounded-lg outline-none focus:ring-1 focus:ring-whatsapp-teal border border-gray-200" autocomplete="off">
+            
+            <button id="btn-send" class="bg-whatsapp-teal text-white p-2.5 rounded-full hover:bg-whatsapp-light transition shadow shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
           </div>
         </div>
 
-        <!-- Chat History Message Stream Box -->
-        <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col"></div>
-
-        <!-- Action Input Footer Bar Deck -->
-        <div class="p-3 bg-whatsapp-gray flex items-center space-x-3 border-t border-gray-200">
-          <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-white px-4 py-2.5 text-sm rounded-lg outline-none focus:ring-1 focus:ring-whatsapp-teal border border-gray-200" autocomplete="off">
-          <button id="btn-send" class="bg-whatsapp-teal text-white p-2.5 rounded-full hover:bg-whatsapp-light transition shadow disabled:opacity-50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
-        </div>
       </div>
-
     </div>
+
   </div>
 
   <!-- FIREBASE INTEGRATION ENGINE SCRIPT MODULE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, addDoc, query, where, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBKdjX2DAcgT_yklBZdTe9D6hIbQAiE-vc",
@@ -162,11 +182,16 @@
     let unsubscribeMessages = null;
     let unsubscribeChatDoc = null;
     
-    let isRegisterMode = true; // Toggle control state
+    let isRegisterMode = true;
 
-    // DOM References
+    // DOM Target Bindings
     const authScreen = document.getElementById('auth-screen');
     const chatScreen = document.getElementById('chat-screen');
+    const sidebarPanel = document.getElementById('sidebar-panel');
+    const chatPanel = document.getElementById('chat-panel');
+    const btnMobileBack = document.getElementById('btn-mobile-back');
+    const chatWindowPlaceholder = document.getElementById('chat-window-placeholder');
+    
     const authTitle = document.getElementById('auth-title');
     const authSubtitle = document.getElementById('auth-subtitle');
     const authUsernameInput = document.getElementById('auth-username');
@@ -180,13 +205,13 @@
     const currentUserAvatar = document.getElementById('current-user-avatar');
     const usersDirectoryList = document.getElementById('users-directory-list');
     
-    const chatWindowPlaceholder = document.getElementById('chat-window-placeholder');
-    const chatWindowActive = document.getElementById('chat-window-active');
     const chatHeaderAvatar = document.getElementById('chat-header-avatar');
     const chatHeaderTitle = document.getElementById('chat-header-title');
     const chatHeaderSubtitle = document.getElementById('chat-header-subtitle');
     const messageContainer = document.getElementById('message-container');
     const chatInput = document.getElementById('chat-input');
+    const photoInput = document.getElementById('photo-input');
+    const btnTriggerPhoto = document.getElementById('btn-trigger-photo');
     const btnSend = document.getElementById('btn-send');
     const btnLogout = document.getElementById('btn-logout');
 
@@ -196,15 +221,13 @@
       db = getFirestore(app);
       setupAuthObserver();
     } catch(error) {
-      console.error("Firebase System Startup Error: ", error);
+      console.error("Firebase Boot Error: ", error);
     }
 
     function setupAuthObserver() {
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           currentUser = user;
-          
-          // Fetch username string from registered database profile records
           const userDoc = await getDoc(doc(db, "users", user.uid));
           const username = userDoc.exists() ? userDoc.data().username : user.email.split('@')[0];
           currentUser.username = username;
@@ -215,6 +238,8 @@
           authScreen.classList.add('hidden');
           chatScreen.classList.remove('hidden');
           
+          // Restore default list views
+          routeMobileView('list');
           loadUsersDirectory();
         } else {
           teardownActiveRoomListeners();
@@ -222,21 +247,34 @@
           selectedPartner = null;
           activeChatId = null;
           
-          chatWindowActive.classList.add('hidden');
-          chatWindowPlaceholder.classList.remove('hidden');
           authScreen.classList.remove('hidden');
           chatScreen.classList.add('hidden');
-          
-          authUsernameInput.value = "";
-          authPasswordInput.value = "";
-          authStatusMsg.textContent = "";
         }
       });
     }
 
-    // AUTH MODE MANIPULATION RULES
+    // MOBILE RESPONSIVE ROUTING VIEW CONTROLS
+    function routeMobileView(targetPanel) {
+      if (targetPanel === 'chat') {
+        sidebarPanel.classList.add('hidden', 'md:block');
+        chatPanel.classList.remove('hidden');
+        chatPanel.classList.add('flex');
+      } else {
+        sidebarPanel.classList.remove('hidden', 'md:block');
+        chatPanel.classList.add('hidden', 'md:flex');
+        chatPanel.classList.remove('flex');
+      }
+    }
+
+    btnMobileBack.addEventListener('click', () => {
+      teardownActiveRoomListeners();
+      routeMobileView('list');
+    });
+
+    // AUTH SELECTION HANDLERS
     btnToggleAuthMode.addEventListener('click', () => {
       isRegisterMode = !isRegisterMode;
+      authStatusMsg.textContent = "";
       if(isRegisterMode) {
         authTitle.textContent = "Create Account";
         authSubtitle.textContent = "Register once to access the encrypted chat system hub.";
@@ -250,7 +288,6 @@
         authToggleText.textContent = "Need a chat space?";
         btnToggleAuthMode.textContent = "Register here";
       }
-      authStatusMsg.textContent = "";
     });
 
     btnPrimaryAuth.addEventListener('click', async () => {
@@ -266,15 +303,12 @@
         return;
       }
 
-      // Append standard tracking handle domain under the hood for clean integration mapping
       const synthesizedEmail = `${usernameRaw}@chatapp.com`;
 
       if(isRegisterMode) {
         authStatusMsg.textContent = "Creating profile space...";
         try {
           const credentials = await createUserWithEmailAndPassword(auth, synthesizedEmail, password);
-          
-          // Document profile trace indexes records to system directory collection database
           await setDoc(doc(db, "users", credentials.user.uid), {
             uid: credentials.user.uid,
             username: usernameRaw,
@@ -293,7 +327,6 @@
       }
     });
 
-    // LOAD SIDEBAR DIRECTORY LIST
     async function loadUsersDirectory() {
       if(!db || !currentUser) return;
       try {
@@ -302,40 +335,37 @@
         
         querySnapshot.forEach((userDoc) => {
           const userData = userDoc.data();
-          // Hide self from searchable panel array directory mapping list loops
           if(userData.uid === currentUser.uid) return;
 
           const rowButton = document.createElement('button');
           rowButton.className = "w-full text-left p-3 flex items-center space-x-3 hover:bg-gray-50 transition border-b border-gray-50 focus:outline-none";
           rowButton.innerHTML = `
-            <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-white font-bold uppercase text-xs shadow-sm">${userData.username.substring(0,2)}</div>
+            <div class="w-10 h-10 bg-whatsapp-teal/10 text-whatsapp-teal rounded-full flex items-center justify-center font-bold uppercase text-xs shadow-sm">${userData.username.substring(0,2)}</div>
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-gray-800 text-sm truncate">${userData.username}</div>
-              <p class="text-[11px] text-gray-400 truncate">Tap to launch chat channel</p>
+              <p class="text-[11px] text-gray-400 truncate">Tap to open secure thread link</p>
             </div>
           `;
           
-          rowButton.addEventListener('click', () => initiateChatChannelRoom(userData));
+          rowButton.addEventListener('click', () => {
+            initiateChatChannelRoom(userData);
+            routeMobileView('chat');
+          });
           usersDirectoryList.appendChild(rowButton);
         });
       } catch (e) {
-        console.error("Directory indexing fault trace logs: ", e);
+        console.error(e);
       }
     }
 
-    // GENERATE PREDICTIVE 1-ON-1 ROOM CORE TARGET ENVIRONMENT
     async function initiateChatChannelRoom(partnerProfileData) {
       teardownActiveRoomListeners();
       selectedPartner = partnerProfileData;
       
-      // Enforce predictable alphabetical token sorting configurations
       const sequence = [currentUser.uid, selectedPartner.uid].sort();
       activeChatId = `${sequence[0]}_${sequence[1]}`;
 
-      // Update room layout view controls
-      chatWindowPlaceholder.className = "hidden";
-      chatWindowActive.classList.remove('hidden');
-
+      chatWindowPlaceholder.classList.add("hidden");
       chatHeaderAvatar.textContent = selectedPartner.username.substring(0, 2).toUpperCase();
       chatHeaderTitle.textContent = selectedPartner.username;
 
@@ -351,10 +381,7 @@
       if(!checkSnap.exists()) {
         await setDoc(docRef, {
           initialized: true,
-          typing: {
-            [currentUser.uid]: false,
-            [selectedPartner.uid]: false
-          }
+          typing: { [currentUser.uid]: false, [selectedPartner.uid]: false }
         }, { merge: true });
       }
     }
@@ -365,7 +392,6 @@
         if(snap.exists()) {
           const data = snap.data();
           const isTyping = data?.typing?.[selectedPartner.uid] === true;
-          
           if(isTyping) {
             chatHeaderSubtitle.textContent = "typing...";
             chatHeaderSubtitle.className = "text-xs text-emerald-600 font-medium animate-pulse";
@@ -388,6 +414,7 @@
 
         snap.forEach((msgDoc) => {
           const data = msgDoc.data();
+          data.id = msgDoc.id; // Inject ID reference parameter bindings for clean deletion lookups
           const isMe = data.senderId === currentUser.uid;
 
           if(!isMe && data.status !== 'read') {
@@ -397,7 +424,6 @@
           renderCleanMessageBubble(data, isMe);
         });
 
-        // Fire implicit dynamic tracking read states loops asynchronously
         receiptsToUpdate.forEach((ref) => {
           updateDoc(ref, { status: 'read' }).catch(e => console.error(e));
         });
@@ -406,23 +432,41 @@
       });
     }
 
-    // BALANCED BUBBLE GENERATOR ENGINE Layout
+    // BALANCED UPGRADED BUBBLE GENERATOR ENGINE
     function renderCleanMessageBubble(data, isMe) {
       const wrapper = document.createElement('div');
-      wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-1`;
+      wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-1 group`;
 
       const bubble = document.createElement('div');
-      bubble.className = `max-w-[70%] rounded-lg px-3 py-1.5 shadow-sm text-sm flex flex-col relative ${
+      bubble.className = `max-w-[75%] rounded-lg px-2.5 py-1.5 shadow-sm text-sm flex flex-col relative ${
         isMe ? 'bg-whatsapp-out text-gray-900 rounded-tr-none' : 'bg-whatsapp-in text-gray-900 rounded-tl-none'
       }`;
 
-      // Content Row Node Container (Enforced isolated bottom pad boundary guidelines tracking metrics)
-      const textNode = document.createElement('div');
-      textNode.className = "break-words text-gray-800 leading-normal pb-4 pr-6 font-normal text-[14px]";
-      textNode.textContent = data.text;
-      bubble.appendChild(textNode);
+      // NATIVE HOVER MESSAGE DELETION CONTROL MECHANISM
+      if(isMe) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = "absolute top-1 right-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition duration-150 focus:outline-none p-1 bg-white/80 backdrop-blur rounded shadow-sm z-40";
+        deleteBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-16v4M4 7h16" />
+          </svg>`;
+        deleteBtn.addEventListener('click', () => executeDocDeletion(data.id));
+        bubble.appendChild(deleteBtn);
+      }
 
-      // Enforced absolute panel containment boundaries to completely fix overlapping
+      // Check message content payload structure type channels
+      if(data.type === 'image') {
+        const imageNode = document.createElement('img');
+        imageNode.src = data.text;
+        imageNode.className = "rounded-lg max-w-full object-cover max-h-60 mb-3 select-none pointer-events-none shadow-inner border border-black/5";
+        bubble.appendChild(imageNode);
+      } else {
+        const textNode = document.createElement('div');
+        textNode.className = "break-words text-gray-800 leading-normal pb-4 pr-6 font-normal text-[14px]";
+        textNode.textContent = data.text;
+        bubble.appendChild(textNode);
+      }
+
       const metaPanel = document.createElement('div');
       metaPanel.className = "absolute bottom-1 right-2 flex items-center space-x-1 text-[10px] text-gray-400 select-none h-3 pointer-events-none";
       
@@ -452,35 +496,55 @@
       messageContainer.appendChild(wrapper);
     }
 
-    async function processMessageTransmission() {
-      const text = chatInput.value.trim();
-      if(!text || !db || !activeChatId || !currentUser) return;
+    async function executeDocDeletion(messageId) {
+      if(!confirm("Delete this message parameter trace profile?")) return;
+      try {
+        await deleteDoc(doc(db, "chats", activeChatId, "messages", messageId));
+      } catch (err) {
+        alert("Deletion fault token error: " + err.message);
+      }
+    }
 
-      chatInput.value = "";
-      clearLocalTypingSystemEngineState();
+    async function processMessageTransmission(payloadText, type = 'text') {
+      if(!payloadText || !db || !activeChatId || !currentUser) return;
 
       const targetCollection = collection(db, "chats", activeChatId, "messages");
       const stamp = new Date();
-      const expiry = new Date(stamp.getTime() + (24 * 60 * 60 * 1000)); // Enforce +24 Hour Lifecycle Rules Parameters
+      const expiry = new Date(stamp.getTime() + (24 * 60 * 60 * 1000)); // 24-Hour Expiration Retention Boundary
 
       try {
         await addDoc(targetCollection, {
-          text: text,
+          text: payloadText,
+          type: type,
           senderId: currentUser.uid,
           createdAt: stamp.toISOString(),
           expireAt: expiry,
           status: 'sent'
         });
       } catch(e) {
-        console.error("Transmission fault tracking metrics log trace: ", e);
+        console.error(e);
       }
     }
 
+    // NATIVE BASE64 IMAGE INTERPOLATION STREAM CAPTURE
+    btnTriggerPhoto.addEventListener('click', () => photoInput.click());
+    
+    photoInput.addEventListener('change', (e) => {
+      const targetFile = e.target.files[0];
+      if(!targetFile) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        const base64DataString = event.target.result;
+        await processMessageTransmission(base64DataString, 'image');
+      };
+      reader.readAsDataURL(targetFile);
+      photoInput.value = ""; // Flush buffer pipeline references safely
+    });
+
     function transmitTypingSignal(isTyping) {
       if(!db || !activeChatId || !currentUser) return;
-      updateDoc(doc(db, "chats", activeChatId), {
-        [`typing.${currentUser.uid}`]: isTyping
-      }).catch(() => {});
+      updateDoc(doc(db, "chats", activeChatId), { [`typing.${currentUser.uid}`]: isTyping }).catch(() => {});
     }
 
     function processTypingInputEvent() {
@@ -499,12 +563,25 @@
       if(unsubscribeChatDoc) unsubscribeChatDoc();
     }
 
-    // System Action Listeners
     btnLogout.addEventListener('click', () => { if(auth) signOut(auth); });
     chatInput.addEventListener('input', processTypingInputEvent);
     chatInput.addEventListener('blur', clearLocalTypingSystemEngineState);
-    chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') processMessageTransmission(); });
-    btnSend.addEventListener('click', processMessageTransmission);
+    chatInput.addEventListener('keydown', (e) => { 
+      if(e.key === 'Enter') {
+        const content = chatInput.value.trim();
+        if(content) {
+          processMessageTransmission(content, 'text');
+          chatInput.value = "";
+        }
+      } 
+    });
+    btnSend.addEventListener('click', () => {
+      const content = chatInput.value.trim();
+      if(content) {
+        processMessageTransmission(content, 'text');
+        chatInput.value = "";
+      }
+    });
   </script>
 </body>
 </html>
