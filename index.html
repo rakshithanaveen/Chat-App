@@ -6,7 +6,6 @@
   <title>One-to-One Firebase Chat App</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Tailwind Configuration for WhatsApp Custom Colors -->
   <script>
     tailwind.config = {
       theme: {
@@ -27,6 +26,11 @@
   </script>
 </head>
 <body class="bg-gray-100 font-sans h-screen flex flex-col antialiased">
+
+  <!-- DYNAMIC LIVE STATUS LOGGER -->
+  <div class="bg-black text-lime-400 p-2 font-mono text-xs z-50 border-b border-gray-800 max-h-24 overflow-y-auto">
+    <strong>System Log:</strong> <span id="live-system-log">Initializing system interface...</span>
+  </div>
 
   <!-- MAIN WRAPPER CONTAINER -->
   <div class="flex-1 flex items-center justify-center relative p-0 sm:p-4 md:p-6 overflow-hidden">
@@ -60,10 +64,6 @@
           <span class="text-xs bg-whatsapp-teal text-white px-2.5 py-1 rounded-full font-medium">Log In</span>
         </button>
       </div>
-
-      <div id="auth-status-msg" class="text-xs font-medium text-red-600">
-        System Operational. Ready for authentication.
-      </div>
     </div>
 
     <!-- MAIN CHAT APPLICATION SCREEN -->
@@ -71,7 +71,6 @@
       
       <!-- SIDEBAR -->
       <div class="w-1/3 border-r border-gray-200 flex flex-col bg-white">
-        <!-- Sidebar Header / Current User Status -->
         <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200">
           <div class="flex items-center space-x-3">
             <div id="current-user-avatar" class="w-10 h-10 bg-whatsapp-teal rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm"></div>
@@ -89,7 +88,6 @@
           </button>
         </div>
 
-        <!-- Room Target/Contact Panel -->
         <div class="flex-1 overflow-y-auto">
           <div class="p-3 bg-emerald-50/50 border-b border-gray-100 flex items-center space-x-3 cursor-default">
             <div id="partner-avatar" class="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase text-lg shadow-sm"></div>
@@ -106,7 +104,6 @@
 
       <!-- CHAT MAIN CONTENT HUB -->
       <div class="flex-1 flex flex-col bg-whatsapp-bg relative">
-        <!-- Top Navigation Bar -->
         <div class="h-16 bg-whatsapp-gray flex items-center justify-between px-4 border-b border-gray-200 shadow-sm z-10">
           <div class="flex items-center space-x-3">
             <div id="chat-header-avatar" class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold uppercase shadow-sm"></div>
@@ -117,12 +114,8 @@
           </div>
         </div>
 
-        <!-- Chat History Window -->
-        <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col">
-          <!-- Dynamic nodes inject here -->
-        </div>
+        <div id="message-container" class="flex-1 p-4 overflow-y-auto space-y-2.5 flex flex-col"></div>
 
-        <!-- Chat Input Action Deck -->
         <div class="p-3 bg-whatsapp-gray flex items-center space-x-3 border-t border-gray-200">
           <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-white px-4 py-2.5 text-sm rounded-lg outline-none focus:ring-1 focus:ring-whatsapp-teal border border-gray-200" autocomplete="off" disabled>
           <button id="btn-send" class="bg-whatsapp-teal text-white p-2.5 rounded-full hover:bg-whatsapp-light transition shadow disabled:opacity-50" disabled>
@@ -131,10 +124,9 @@
             </svg>
           </button>
         </div>
-
       </div>
-    </div>
 
+    </div>
   </div>
 
   <!-- FIREBASE INTEGRATION ENGINE SCRIPT MODULE -->
@@ -143,7 +135,16 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Configuration Credentials
+    const logEl = document.getElementById('live-system-log');
+    function log(msg, isError = false) {
+      console.log(msg);
+      logEl.innerHTML = isError ? `<span class="text-red-500 font-bold">⚠️ ${msg}</span>` : `✔️ ${msg}`;
+    }
+
+    window.onerror = function(message, source, lineno, colno, error) {
+      log(`Fatal Global Error: ${message} at line ${lineno}`, true);
+    };
+
     const firebaseConfig = {
       apiKey: "AIzaSyBKdjX2DAcgT_yklBZdTe9D6hIbQAiE-vc",
       authDomain: "chatapp-81c13.firebaseapp.com",
@@ -153,13 +154,8 @@
       appId: "1:907954904111:web:f4245d78b8d46b898fbada"
     };
 
-    let app, auth, db;
-    let currentUser = null;
-    let targetPartner = null;
-    let activeChatId = null;
-    let typingTimeout = null;
-    let unsubscribeMessages = null;
-    let unsubscribeChatDoc = null;
+    let app, auth, db, currentUser = null, targetPartner = null, activeChatId = null;
+    let typingTimeout = null, unsubscribeMessages = null, unsubscribeChatDoc = null;
 
     const USER_PROFILES = {
       "NAV@test.com": { email: "NAV@test.com", displayId: "NAV", name: "User A (NAV)" },
@@ -170,7 +166,6 @@
     const chatScreen = document.getElementById('chat-screen');
     const btnLoginA = document.getElementById('btn-login-a');
     const btnLoginB = document.getElementById('btn-login-b');
-    const authStatusMsg = document.getElementById('auth-status-msg');
     const currentUserAvatar = document.getElementById('current-user-avatar');
     const currentUserName = document.getElementById('current-user-name');
     const partnerAvatar = document.getElementById('partner-avatar');
@@ -186,37 +181,43 @@
     const btnLogout = document.getElementById('btn-logout');
 
     try {
+      log("Connecting to Firebase...");
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
+      log("Firebase core modules successfully initialized.");
       setupAuthObserver();
     } catch(error) {
-      alert("Firebase Engine Boot Error: " + error.message);
+      log("Initialization Fault: " + error.message, true);
     }
 
     function setupAuthObserver() {
       onAuthStateChanged(auth, async (user) => {
         try {
           if (user) {
+            log(`Authenticated successfully as ${user.email}`);
             currentUser = user;
-            const mappedProfile = USER_PROFILES[user.email.toUpperCase()] || { name: user.email, displayId: "??" };
-            currentUser.metaProfile = mappedProfile;
+            currentUser.metaProfile = USER_PROFILES[user.email.toUpperCase()] || { name: user.email, displayId: "??" };
             
             determinePartnerIdentity(user.email);
             generatePredictiveChatId();
             
-            // Instantly transition viewports
             authScreen.classList.add('hidden');
             chatScreen.classList.remove('hidden');
             
             updateUserProfileUI();
+            log("Verifying Firestore Room document structures...");
             await ensureChatDocumentStructure();
+            
+            log("Opening real-time messaging pipeline streams...");
             listenToChatMetaRoom();
             listenToLiveMessages();
             
             chatInput.disabled = false;
             btnSend.disabled = false;
+            log("System fully operational. Ready to chat.");
           } else {
+            log("System Idle. Waiting for User authentication selection click.");
             teardownActiveListeners();
             currentUser = null;
             authScreen.classList.remove('hidden');
@@ -225,7 +226,7 @@
             btnSend.disabled = true;
           }
         } catch (obsError) {
-          alert("Post-Login Interface Setup Error: " + obsError.message + "\n\nEnsure Firestore Database is enabled in Test Mode.");
+          log("Interface Load Error: " + obsError.message, true);
         }
       });
     }
@@ -264,7 +265,7 @@
           }, { merge: true });
         }
       } catch (e) {
-        throw new Error("Firestore Access Blocked. Did you initialize Firestore Database in Test Mode? Details: " + e.message);
+        log("Firestore write blocked. Did you turn on Firestore in Test Mode? Error details: " + e.message, true);
       }
     }
 
@@ -289,7 +290,7 @@
             sidebarStatus.classList.remove('hidden');
           }
         }
-      }, (err) => { alert("Meta Stream Error: " + err.message); });
+      }, (err) => { log("Meta Sync Interrupted: " + err.message, true); });
     }
 
     function listenToLiveMessages() {
@@ -315,7 +316,7 @@
         });
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }, (error) => {
-        alert("Message Stream Access Blocked: " + error.message);
+        log("Message Stream Error (Check Firestore indexes/rules): " + error.message, true);
       });
     }
 
@@ -382,7 +383,7 @@
           status: 'sent'
         });
       } catch (err) {
-        alert("Failed to send message: " + err.message);
+        log("Message send failed: " + err.message, true);
       }
     }
 
@@ -409,18 +410,18 @@
     }
 
     btnLoginA.addEventListener('click', () => {
-      authStatusMsg.textContent = "Authenticating User A...";
+      log("Login Button A clicked. Sending request to Firebase...");
       signInWithEmailAndPassword(auth, "NAV@test.com", "123456").catch(err => {
-        authStatusMsg.textContent = "Authentication failed.";
-        alert("Authentication error: " + err.message);
+        log("Authentication error: " + err.message, true);
+        alert("Authentication failed: " + err.message);
       });
     });
 
     btnLoginB.addEventListener('click', () => {
-      authStatusMsg.textContent = "Authenticating User B...";
+      log("Login Button B clicked. Sending request to Firebase...");
       signInWithEmailAndPassword(auth, "RNJ@test.com", "123456").catch(err => {
-        authStatusMsg.textContent = "Authentication failed.";
-        alert("Authentication error: " + err.message);
+        log("Authentication error: " + err.message, true);
+        alert("Authentication failed: " + err.message);
       });
     });
 
