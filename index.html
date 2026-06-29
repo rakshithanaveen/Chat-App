@@ -61,8 +61,8 @@
         </button>
       </div>
 
-      <div id="auth-status-msg" class="text-xs font-medium text-red-600 hidden">
-        Connection error. Please verify database parameters.
+      <div id="auth-status-msg" class="text-xs font-medium text-red-600">
+        System Operational. Ready for authentication.
       </div>
     </div>
 
@@ -143,18 +143,16 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Embedded Core Project Configuration Instance Credentials
+    // Configuration Credentials
     const firebaseConfig = {
       apiKey: "AIzaSyBKdjX2DAcgT_yklBZdTe9D6hIbQAiE-vc",
       authDomain: "chatapp-81c13.firebaseapp.com",
       projectId: "chatapp-81c13",
       storageBucket: "chatapp-81c13.firebasestorage.app",
       messagingSenderId: "907954904111",
-      appId: "1:907954904111:web:f4245d78b8d46b898fbada",
-      measurementId: "G-0PKWCDSJHK"
+      appId: "1:907954904111:web:f4245d78b8d46b898fbada"
     };
 
-    // Application Global Variables
     let app, auth, db;
     let currentUser = null;
     let targetPartner = null;
@@ -163,13 +161,11 @@
     let unsubscribeMessages = null;
     let unsubscribeChatDoc = null;
 
-    // Hardcoded User Profile Framework Meta mappings
     const USER_PROFILES = {
       "NAV@test.com": { email: "NAV@test.com", displayId: "NAV", name: "User A (NAV)" },
       "RNJ@test.com": { email: "RNJ@test.com", displayId: "RNJ", name: "User B (RNJ)" }
     };
 
-    // DOM UI Target Elements
     const authScreen = document.getElementById('auth-screen');
     const chatScreen = document.getElementById('chat-screen');
     const btnLoginA = document.getElementById('btn-login-a');
@@ -189,78 +185,66 @@
     const btnSend = document.getElementById('btn-send');
     const btnLogout = document.getElementById('btn-logout');
 
-    // Automatically fire up the network service engine
-    initializeFirebaseEngine(firebaseConfig);
-
-    function initializeFirebaseEngine(config) {
-      try {
-        app = initializeApp(config);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        setupAuthObserver();
-      } catch(error) {
-        console.error("Initialization fault:", error);
-        authStatusMsg.classList.remove('hidden');
-      }
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      setupAuthObserver();
+    } catch(error) {
+      alert("Firebase Engine Boot Error: " + error.message);
     }
 
     function setupAuthObserver() {
-      if(!auth) return;
       onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          currentUser = user;
-          const mappedProfile = USER_PROFILES[user.email.toUpperCase()] || { name: user.email, displayId: "??" };
-          currentUser.metaProfile = mappedProfile;
-          
-          determinePartnerIdentity(user.email);
-          generatePredictiveChatId();
-          
-          // Switch Screen display panels
-          authScreen.classList.add('hidden');
-          chatScreen.classList.remove('hidden');
-          
-          updateUserProfileUI();
-          await ensureChatDocumentStructure();
-          listenToChatMetaRoom();
-          listenToLiveMessages();
-          
-          chatInput.disabled = false;
-          btnSend.disabled = false;
-        } else {
-          teardownActiveListeners();
-          currentUser = null;
-          authScreen.classList.remove('hidden');
-          chatScreen.classList.add('hidden');
-          chatInput.disabled = true;
-          btnSend.disabled = true;
+        try {
+          if (user) {
+            currentUser = user;
+            const mappedProfile = USER_PROFILES[user.email.toUpperCase()] || { name: user.email, displayId: "??" };
+            currentUser.metaProfile = mappedProfile;
+            
+            determinePartnerIdentity(user.email);
+            generatePredictiveChatId();
+            
+            // Instantly transition viewports
+            authScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            
+            updateUserProfileUI();
+            await ensureChatDocumentStructure();
+            listenToChatMetaRoom();
+            listenToLiveMessages();
+            
+            chatInput.disabled = false;
+            btnSend.disabled = false;
+          } else {
+            teardownActiveListeners();
+            currentUser = null;
+            authScreen.classList.remove('hidden');
+            chatScreen.classList.add('hidden');
+            chatInput.disabled = true;
+            btnSend.disabled = true;
+          }
+        } catch (obsError) {
+          alert("Post-Login Interface Setup Error: " + obsError.message + "\n\nEnsure Firestore Database is enabled in Test Mode.");
         }
       });
     }
 
     function determinePartnerIdentity(currentEmail) {
       const canonical = currentEmail.toUpperCase();
-      if (canonical === "NAV@TEST.COM") {
-        targetPartner = USER_PROFILES["RNJ@TEST.COM"];
-      } else {
-        targetPartner = USER_PROFILES["NAV@TEST.COM"];
-      }
+      targetPartner = (canonical === "NAV@TEST.COM") ? USER_PROFILES["RNJ@TEST.COM"] : USER_PROFILES["NAV@TEST.COM"];
     }
 
-    // Alphabetic uid string sequence normalization
     function generatePredictiveChatId() {
-      const normalizedCurrent = currentUser.email.toLowerCase();
-      const normalizedPartner = targetPartner.email.toLowerCase();
-      const tokens = [normalizedCurrent, normalizedPartner].sort();
+      const tokens = [currentUser.email.toLowerCase(), targetPartner.email.toLowerCase()].sort();
       activeChatId = tokens[0].split('@')[0] + "_" + tokens[1].split('@')[0];
     }
 
     function updateUserProfileUI() {
       currentUserAvatar.textContent = currentUser.metaProfile.displayId.substring(0, 2);
       currentUserName.textContent = currentUser.metaProfile.name;
-      
       partnerAvatar.textContent = targetPartner.displayId.substring(0, 2);
       partnerName.textContent = targetPartner.name;
-      
       chatHeaderAvatar.textContent = targetPartner.displayId.substring(0, 2);
       chatHeaderTitle.textContent = targetPartner.name;
     }
@@ -268,15 +252,19 @@
     async function ensureChatDocumentStructure() {
       if (!db || !activeChatId) return;
       const chatDocRef = doc(db, "chats", activeChatId);
-      const snap = await getDoc(chatDocRef);
-      if(!snap.exists()) {
-        await setDoc(chatDocRef, {
-          initialized: true,
-          typing: {
-            [currentUser.email.toLowerCase().split('@')[0]]: false,
-            [targetPartner.email.toLowerCase().split('@')[0]]: false
-          }
-        }, { merge: true });
+      try {
+        const snap = await getDoc(chatDocRef);
+        if(!snap.exists()) {
+          await setDoc(chatDocRef, {
+            initialized: true,
+            typing: {
+              [currentUser.email.toLowerCase().split('@')[0]]: false,
+              [targetPartner.email.toLowerCase().split('@')[0]]: false
+            }
+          }, { merge: true });
+        }
+      } catch (e) {
+        throw new Error("Firestore Access Blocked. Did you initialize Firestore Database in Test Mode? Details: " + e.message);
       }
     }
 
@@ -301,21 +289,13 @@
             sidebarStatus.classList.remove('hidden');
           }
         }
-      });
+      }, (err) => { alert("Meta Stream Error: " + err.message); });
     }
 
     function listenToLiveMessages() {
       if (!db || !activeChatId) return;
-      
       const msgsCollectionRef = collection(db, "chats", activeChatId, "messages");
-      const now = new Date();
-      
-      // Dynamic boundary filter tracking timeline rules
-      const q = query(
-        msgsCollectionRef, 
-        where("expireAt", ">", now),
-        orderBy("expireAt", "asc")
-      );
+      const q = query(msgsCollectionRef, where("expireAt", ">", new Date()), orderBy("expireAt", "asc"));
 
       unsubscribeMessages = onSnapshot(q, (snapshot) => {
         messageContainer.innerHTML = "";
@@ -324,22 +304,18 @@
         snapshot.forEach((msgDoc) => {
           const data = msgDoc.data();
           const isMe = data.senderId === currentUser.email.toLowerCase();
-          
           if(!isMe && data.status !== 'read') {
             unreadMessageDocRefs.push(doc(db, "chats", activeChatId, "messages", msgDoc.id));
           }
-
           renderMessageBubble(data, isMe);
         });
 
-        // Resolve status maps
         unreadMessageDocRefs.forEach((docRef) => {
-          updateDoc(docRef, { status: 'read' }).catch(err => console.error("Receipt update error:", err));
+          updateDoc(docRef, { status: 'read' }).catch(err => console.error(err));
         });
-
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }, (error) => {
-        console.error("Database connection exception stream trace:", error);
+        alert("Message Stream Access Blocked: " + error.message);
       });
     }
 
@@ -375,18 +351,9 @@
       if(isMe) {
         const checkmarks = document.createElement('span');
         checkmarks.className = "ml-0.5";
-        if(data.status === 'read') {
-          checkmarks.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M6.267 3.455a.75.75 0 00-.708.522L3.547 11.22a.75.75 0 101.446.4l1.372-4.954 8.214 8.214a.75.75 0 001.06-1.06L6.267 3.455z" clip-rule="evenodd"/>
-              <path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/>
-            </svg>`;
-        } else {
-          checkmarks.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/>
-            </svg>`;
-        }
+        checkmarks.innerHTML = data.status === 'read' ? 
+          `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a.75.75 0 00-.708.522L3.547 11.22a.75.75 0 101.446.4l1.372-4.954 8.214 8.214a.75.75 0 001.06-1.06L6.267 3.455z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/></svg>` :
+          `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.72 6.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0l-3.25-3.25a.75.75 0 111.06-1.06L9 12.44l6.66-6.66a.75.75 0 011.06 0z" clip-rule="evenodd"/></svg>`;
         metaPanel.appendChild(checkmarks);
       }
 
@@ -406,38 +373,29 @@
       const currentTime = new Date();
       const retentionExpirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
 
-      const documentPayload = {
-        text: messageBody,
-        senderId: currentUser.email.toLowerCase(),
-        createdAt: currentTime.toISOString(),
-        expireAt: retentionExpirationTime,
-        status: 'sent'
-      };
-
       try {
-        await addDoc(messagesCollectionRef, documentPayload);
+        await addDoc(messagesCollectionRef, {
+          text: messageBody,
+          senderId: currentUser.email.toLowerCase(),
+          createdAt: currentTime.toISOString(),
+          expireAt: retentionExpirationTime,
+          status: 'sent'
+        });
       } catch (err) {
-        console.error("Database compilation fault logging error:", err);
+        alert("Failed to send message: " + err.message);
       }
     }
 
-    // Toggle states cleanly
     function setTypingStatus(isTyping) {
       if(!db || !activeChatId || !currentUser) return;
-      const chatDocRef = doc(db, "chats", activeChatId);
       const myToken = currentUser.email.toLowerCase().split('@')[0];
-      
-      updateDoc(chatDocRef, {
-        [`typing.${myToken}`]: isTyping
-      }).catch(e => console.error("Typing context mismatch:", e));
+      updateDoc(doc(db, "chats", activeChatId), { [`typing.${myToken}`]: isTyping }).catch(() => {});
     }
 
     function handleTypingInputTrigger() {
       setTypingStatus(true);
       if(typingTimeout) clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        clearTypingIndicatorState();
-      }, 2000);
+      typingTimeout = setTimeout(() => { clearTypingIndicatorState(); }, 2000);
     }
 
     function clearTypingIndicatorState() {
@@ -450,24 +408,26 @@
       if(unsubscribeChatDoc) unsubscribeChatDoc();
     }
 
-    // Click Bindings (Updated to 6-digit password)
     btnLoginA.addEventListener('click', () => {
-      signInWithEmailAndPassword(auth, "NAV@test.com", "123456").catch(err => alert("Authentication failed: " + err.message));
+      authStatusMsg.textContent = "Authenticating User A...";
+      signInWithEmailAndPassword(auth, "NAV@test.com", "123456").catch(err => {
+        authStatusMsg.textContent = "Authentication failed.";
+        alert("Authentication error: " + err.message);
+      });
     });
 
     btnLoginB.addEventListener('click', () => {
-      signInWithEmailAndPassword(auth, "RNJ@test.com", "123456").catch(err => alert("Authentication failed: " + err.message));
+      authStatusMsg.textContent = "Authenticating User B...";
+      signInWithEmailAndPassword(auth, "RNJ@test.com", "123456").catch(err => {
+        authStatusMsg.textContent = "Authentication failed.";
+        alert("Authentication error: " + err.message);
+      });
     });
 
-    btnLogout.addEventListener('click', () => {
-      if(auth) signOut(auth).catch(err => console.error(err));
-    });
-
+    btnLogout.addEventListener('click', () => { if(auth) signOut(auth); });
     chatInput.addEventListener('input', handleTypingInputTrigger);
     chatInput.addEventListener('blur', clearTypingIndicatorState);
-    chatInput.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter') pushOutgoingChatMessage();
-    });
+    chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') pushOutgoingChatMessage(); });
     btnSend.addEventListener('click', pushOutgoingChatMessage);
   </script>
 </body>
